@@ -1,11 +1,34 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import Header from "./Header";
+import { checkValidData } from "../utils/validate";
 
 const Login = () => {
   const [isSignIn, setIsSignIn] = useState(true);
+  const [errorMessage, setErrorMessage] = useState(null);
+
+  const email = useRef(null);
+  const password = useRef(null);
 
   const handleClick = () => {
     setIsSignIn(!isSignIn);
+  };
+
+  const handleSubmit = () => {
+    const validateArr = checkValidData(
+      email.current.value,
+      password.current.value
+    );
+    if (validateArr != null) {
+      if (validateArr.length == 2) {
+        setErrorMessage([validateArr[0], validateArr[1]]);
+      } else if (validateArr.length == 1) {
+        setErrorMessage([validateArr[0]]);
+      }
+    }
+    if (errorMessage != null && validateArr == null) {
+      setErrorMessage(null);
+    }
+    console.log(errorMessage);
   };
 
   return (
@@ -19,7 +42,10 @@ const Login = () => {
         />
       </div>
 
-      <form className="absolute bg-black/85 text-white w-4/12 mx-auto left-0 right-0 my-36 p-15 rounded-md">
+      <form
+        onSubmit={(e) => e.preventDefault()}
+        className="absolute bg-black/85 text-white w-4/12 mx-auto left-0 right-0 my-36 p-15 rounded-md"
+      >
         <h1 className="font-bold text-3xl mb-6 mx-2">
           {isSignIn ? "Sign In" : "Sign Up"}
         </h1>
@@ -32,11 +58,13 @@ const Login = () => {
         )}
         <input
           type="text"
+          ref={email}
           placeholder="Email Address"
           className="m-2 p-4 my-4 border-1 border-white/30 bg-white/5 rounded-md w-full"
         />
         <input
           type="password"
+          ref={password}
           placeholder="Password"
           className="m-2 p-4 my-4 border-1 border-white/30 bg-white/5 rounded-md w-full"
         />
@@ -47,8 +75,13 @@ const Login = () => {
             className="m-2 p-4 my-4 border-1 border-white/30 bg-white/5 rounded-md w-full"
           />
         )}
-
-        <button className="cursor-pointer bg-red-600 p-2 my-4 hover:bg-red-700 transition-all ease-in-out duration-300 font-semibold m- w-full rounded-md m-2">
+        {errorMessage != null && (
+          <p className="text-red-600">{errorMessage.join(" ")}</p>
+        )}
+        <button
+          className="cursor-pointer bg-red-600 p-2 my-4 hover:bg-red-700 transition-all ease-in-out duration-300 font-semibold m- w-full rounded-md m-2"
+          onClick={handleSubmit}
+        >
           {isSignIn ? "Sign In" : "Sign Up"}
         </button>
         <div className="flex py-4 m-2">
