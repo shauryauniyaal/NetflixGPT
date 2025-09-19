@@ -1,6 +1,15 @@
 import React, { useRef, useState } from "react";
 import Header from "./Header";
 import { checkValidData } from "../utils/validate";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  updateProfile,
+} from "firebase/auth";
+import { auth } from "../utils/firebase";
+import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { addUser } from "../utils/userSlice";
 
 const Login = () => {
   const [isSignIn, setIsSignIn] = useState(true);
@@ -9,10 +18,13 @@ const Login = () => {
   const email = useRef(null);
   const password = useRef(null);
   const name = useRef("A");
+  const navigate = useNavigate();
 
   const handleClick = () => {
     setIsSignIn(!isSignIn);
   };
+
+  const dispatch = useDispatch();
 
   const handleSubmit = () => {
     const nameValue = isSignIn ? "John Doe" : name.current.value;
@@ -24,16 +36,73 @@ const Login = () => {
     );
 
     if (validateArr && validateArr.length > 0) {
-      if (!isSignIn) {
-        // Show all errors for sign up
-        setErrorMessage(validateArr);
-      } else {
-        // Show only email and password errors for sign in
-        const signInErrors = validateArr.filter((error, index) => index < 2);
-        setErrorMessage(signInErrors);
-      }
+      const relevantErrors = isSignIn
+        ? validateArr.filter((error) => !error.includes("Name"))
+        : validateArr;
+
+      setErrorMessage(relevantErrors);
+      return;
+    }
+
+    if (!isSignIn) {
+      createUserWithEmailAndPassword(
+        auth,
+        email.current.value,
+        password.current.value
+      )
+        .then((userCredential) => {
+          // Signed up
+          const user = userCredential.user;
+          console.log(user);
+          setErrorMessage(null);
+
+          updateProfile(user, {
+            displayName: name.current.value,
+            photoURL:
+              "https://occ-0-3752-3646.1.nflxso.net/dnm/api/v6/vN7bi_My87NPKvsBoib006Llxzg/AAAABQZLu3tbiSuiiDBp-icDwSRXAVSxEcUzCTRESSgt1RM8vzuAPshbi2d43p6m53ljhIGT4LEPJU4smKHqIN89iHxMOKFWJOc.png?r=93c",
+          })
+            .then(() => {
+              const { uid, email, displayName, photoURL } = auth.currentUser;
+              dispatch(
+                addUser({
+                  uid: uid,
+                  email: email,
+                  displayName: displayName,
+                  photoURL: photoURL,
+                })
+              );
+              navigate("/browse");
+            })
+            .catch((error) => {
+              console.log(error);
+            });
+        })
+        .catch((error) => {
+          const errorCode = error.code;
+          const errorMessage = error.message;
+          setErrorMessage([errorCode + "- ", errorMessage]);
+        });
     } else {
-      setErrorMessage(null);
+      signInWithEmailAndPassword(
+        auth,
+        email.current.value,
+        password.current.value
+      )
+        .then((userCredential) => {
+          // Signed in
+          const user = userCredential.user;
+          console.log(user);
+          setErrorMessage(null);
+          navigate("/browse");
+        })
+        .catch((error) => {
+          const errorCode = error.code;
+          const errorMessage = error.message;
+          console.log(errorCode + "- " + errorMessage);
+          if (errorCode == "auth/invalid-credential") {
+            setErrorMessage(["Invalid User Credentials. Please try again"]);
+          }
+        });
     }
   };
 
