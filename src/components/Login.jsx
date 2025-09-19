@@ -8,27 +8,33 @@ const Login = () => {
 
   const email = useRef(null);
   const password = useRef(null);
+  const name = useRef("A");
 
   const handleClick = () => {
     setIsSignIn(!isSignIn);
   };
 
   const handleSubmit = () => {
+    const nameValue = isSignIn ? "John Doe" : name.current.value;
+
     const validateArr = checkValidData(
       email.current.value,
-      password.current.value
+      password.current.value,
+      nameValue
     );
-    if (validateArr != null) {
-      if (validateArr.length == 2) {
-        setErrorMessage([validateArr[0], validateArr[1]]);
-      } else if (validateArr.length == 1) {
-        setErrorMessage([validateArr[0]]);
+
+    if (validateArr && validateArr.length > 0) {
+      if (!isSignIn) {
+        // Show all errors for sign up
+        setErrorMessage(validateArr);
+      } else {
+        // Show only email and password errors for sign in
+        const signInErrors = validateArr.filter((error, index) => index < 2);
+        setErrorMessage(signInErrors);
       }
-    }
-    if (errorMessage != null && validateArr == null) {
+    } else {
       setErrorMessage(null);
     }
-    console.log(errorMessage);
   };
 
   return (
@@ -52,6 +58,7 @@ const Login = () => {
         {!isSignIn && (
           <input
             type="text"
+            ref={name}
             placeholder="Full Name"
             className="m-2 my-4 p-4 border-1 border-white/30 bg-white/5 rounded-md w-full"
           />
