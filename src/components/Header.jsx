@@ -55,7 +55,7 @@ const Header = () => {
 
   return (
     <div
-      className={`absolute justify-between w-full bg-gradient-to-b from-black z-10 flex align-middle ${
+      className={`absolute justify-between w-full bg-gradient-to-b from-black z-20 flex align-middle ${
         !user && "py-4"
       } items-center`}
     >

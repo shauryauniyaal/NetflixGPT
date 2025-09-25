@@ -1,57 +1,77 @@
 import React, { useRef } from "react";
-import { useDispatch } from "react-redux";
 import {
-  toggleGptLoading,
+  addGptMovieDesc,
   addGptMovieList,
+  addMainMovieData,
   addMovieData,
+  toggleGptLoading,
 } from "../utils/gptSlice";
-import { API_OPTIONS } from "../utils/constants";
+import useSearchMovieTMDB from "../hooks/useSearchMovieTMDB";
+import { useDispatch } from "react-redux";
 import client from "../utils/openai";
 
 const GPTSearchBar = () => {
-  const dispatch = useDispatch();
   const userInput = useRef(null);
+  const dispatch = useDispatch();
+  const TMDBResultsHandler = useSearchMovieTMDB;
 
   const handleGptSearchClick = async () => {
-    // Early return if no input
     if (!userInput.current?.value) return;
 
     try {
       dispatch(toggleGptLoading());
 
-      const gptQuery =
+      const gptMovieSearchQuery =
         "Act as a movie recommendation system and suggest some movies for the query: " +
         userInput.current.value +
-        ". Only give me names of 5 movies, comma separated like the example result given ahead. Example Result: Gadar,Sholay,Don,Golmaal,Koi Mil Gaya";
+        ". You can also go for deep cuts not just provide all generic movies. Only give me names,the correct release year (make sure to check it on the internet) and the one line description (it should not contain any commas; ommit all of them from the description) of 5 movies, comma separated (without any spaces between commas) like the example result given ahead. Example Result: Gadar^2001^<description>,Sholay^1975^<description>,Don^1978^<description>,Golmaal^1979^<description>,Koi Mil Gaya^2003^<description>";
 
-      const chatCompletion = await client.chat.completions.create({
-        messages: [{ role: "user", content: gptQuery }],
-        model: "gpt-3.5-turbo",
+      const chatCompletion01 = await client.chat.completions.create({
+        messages: [{ role: "user", content: gptMovieSearchQuery }],
+        model: "gpt-5-nano",
       });
 
       const gptMovies =
-        chatCompletion.choices?.[0]?.message?.content.split(",");
-      const promiseArr = gptMovies.map((movie) => searchMovieTMDB(movie));
+        chatCompletion01.choices?.[0]?.message?.content.split(",");
+      const splitMoviesArr = [];
+      const promiseArr = gptMovies.map((movie) => {
+        const movieDeets = movie.split("^");
+        splitMoviesArr.push(movieDeets);
+        return TMDBResultsHandler(movieDeets[0], movieDeets[1]);
+      });
+
+      const movieDescs = splitMoviesArr.map((movie) => movie[2]);
+
+      dispatch(addGptMovieDesc(movieDescs));
+
       const TMDBResults = await Promise.all(promiseArr);
 
-      dispatch(addGptMovieList(gptMovies));
+      const gptFilterQuery =
+        "From this array named TMDBResults, " +
+        JSON.stringify(TMDBResults) +
+        " Each element contains an array of objects which have movie data. Give me a JS array with the JS object of the movie which best fits the description of each element in the array. The description array is: " +
+        JSON.stringify(movieDescs) +
+        " Each element in this description array contains a description. Search for the movie that best fits the description inside TMDBResutls. You have to search like this: The first element in the description array will be used to search the first element in TMDBResults and the second element in the description array will be used to search the second element in TMDBResults and so on and then push the correct JS object inside an array and give me the array. Make sure its parsable using JSON function.";
+
+      const chatCompletion02 = await client.chat.completions.create({
+        messages: [{ role: "user", content: gptFilterQuery }],
+        model: "gpt-5-nano",
+      });
+
+      console.log(chatCompletion02.choices?.[0]?.message?.content);
+
+      const mainMovieData = JSON.parse(
+        chatCompletion02.choices?.[0]?.message?.content
+      );
+
+      dispatch(addGptMovieList(splitMoviesArr));
       dispatch(addMovieData(TMDBResults));
+      dispatch(addMainMovieData(mainMovieData));
     } catch (error) {
       console.error("Error during search:", error);
     } finally {
       dispatch(toggleGptLoading());
     }
-  };
-
-  const searchMovieTMDB = async (movie) => {
-    const data = await fetch(
-      "https://api.themoviedb.org/3/search/movie?query=" +
-        movie +
-        "&include_adult=false&language=en-US&page=1",
-      API_OPTIONS
-    );
-    const json = await data.json();
-    return json.results;
   };
 
   return (

@@ -2,7 +2,7 @@ import React from "react";
 
 const MovieTitle = ({ title, original_title, original_language, overview }) => {
   return (
-    <div className="pt-36 px-20 absolute w-full aspect-video bg-gradient-to-r from-black">
+    <div className="pt-36 px-20 absolute w-full aspect-video bg-gradient-to-t from-black z-10">
       <h1 className="text-5xl font-bold w-1/3 py-2 text-white">{title}</h1>
       {original_language != "en" && (
         <h1 className="font-bold text-2xl w-1/3 text-white">

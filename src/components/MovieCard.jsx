@@ -2,11 +2,15 @@ import React from "react";
 import { IMG_CDN_URL } from "../utils/constants";
 
 const MovieCard = ({ movie }) => {
-  console.log(movie);
-
   return (
     <div className="w-35">
-      <img alt={movie?.title} src={IMG_CDN_URL + movie?.poster_path} />
+      {movie &&  (
+        <img
+          alt={movie?.title}
+          src={IMG_CDN_URL + movie?.poster_path}
+          className="text-2xl text-white"
+        />
+      )}
     </div>
   );
 };

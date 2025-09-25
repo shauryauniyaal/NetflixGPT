@@ -6,7 +6,7 @@ import Loading from "./Loading";
 const GPTSearchResults = () => {
   const movieData = useSelector((store) => store.gpt.movieData);
   const isGptLoading = useSelector((store) => store.gpt.isGptLoading);
-  const mainMovies = movieData?.map((movie) => movie[0]);
+  const mainMovies = useSelector((store) => store.gpt.mainMovieData);
   console.log(mainMovies);
 
   return !isGptLoading ? (

@@ -8,7 +8,7 @@ const MovieBg = ({ movieId }) => {
   return (
     <div className="w-full overflow-hidden">
       <iframe
-        className="w-full aspect-video"
+        className="w-full aspect-video brightness-60"
         src={
           "https://www.youtube.com/embed/" +
           trailerVideo?.key +
